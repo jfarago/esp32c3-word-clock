@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Regenerates arduino/word_clock/ from the PlatformIO source of truth
 # (src/, include/) so people without PlatformIO can flash the same code
-# from the Arduino IDE. Run this after changing src/main.cpp, src/words.cpp,
-# or include/words.h.
+# from the Arduino IDE. Run this after adding/changing any file in src/ or
+# include/.
 set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -17,20 +17,30 @@ generated_header() {
   echo
 }
 
+# main.cpp becomes word_clock.ino (Arduino requires the sketch's main file
+# to share the folder name); every other src/*.cpp is copied as-is.
 {
   generated_header "src/main.cpp"
   cat "$repo_root/src/main.cpp"
 } > "$out_dir/word_clock.ino"
 
-{
-  generated_header "src/words.cpp"
-  cat "$repo_root/src/words.cpp"
-} > "$out_dir/words.cpp"
+for src_file in "$repo_root"/src/*.cpp; do
+  name="$(basename "$src_file")"
+  [ "$name" = "main.cpp" ] && continue
+  {
+    generated_header "src/$name"
+    cat "$src_file"
+  } > "$out_dir/$name"
+done
 
-{
-  generated_header "include/words.h"
-  cat "$repo_root/include/words.h"
-} > "$out_dir/words.h"
+for header_file in "$repo_root"/include/*.h; do
+  name="$(basename "$header_file")"
+  [ "$name" = "config.example.h" ] && continue
+  {
+    generated_header "include/$name"
+    cat "$header_file"
+  } > "$out_dir/$name"
+done
 
 # config.example.h is tracked and always kept current with the PlatformIO
 # example. config.h holds real credentials (gitignored), edited by hand

@@ -10,9 +10,6 @@
 // grid (row 0 = top row, col 0 = leftmost letter in that row), which is
 // how the physical layout was measured, and translated to the actual
 // wiring index by stripIndex().
-static const int ROW_WIDTH = 15;
-static const int NUM_ROWS = 8;
-
 struct Word {
   uint8_t row;       // 0 = top row of the text grid
   uint8_t colStart;  // 0 = leftmost letter in the row
@@ -24,17 +21,17 @@ static const CRGB WORD_COLOR = CRGB::White;
 
 // Row 0 (bottom-most physically, first on the strip) runs left-to-right;
 // direction alternates for each row above it.
-static uint16_t stripIndex(int row, int col) {
-  int physicalRowFromBottom = NUM_ROWS - 1 - row;
-  int rowStart = physicalRowFromBottom * ROW_WIDTH;
+uint16_t wordGridStripIndex(int row, int col) {
+  int physicalRowFromBottom = WORD_GRID_ROWS - 1 - row;
+  int rowStart = physicalRowFromBottom * WORD_GRID_COLS;
   bool leftToRight = (physicalRowFromBottom % 2) == 0;
-  int withinRow = leftToRight ? col : (ROW_WIDTH - 1 - col);
+  int withinRow = leftToRight ? col : (WORD_GRID_COLS - 1 - col);
   return rowStart + withinRow;
 }
 
 static void lightWord(CRGB *leds, const Word &w, String &phrase) {
   for (uint8_t i = 0; i < w.length; i++) {
-    leds[stripIndex(w.row, w.colStart + i)] = WORD_COLOR;
+    leds[wordGridStripIndex(w.row, w.colStart + i)] = WORD_COLOR;
   }
   if (phrase.length() > 0) phrase += ' ';
   phrase += w.name;
