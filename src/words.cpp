@@ -95,6 +95,7 @@ void renderTimeToWords(CRGB *leds, int hour24, int minute) {
         break;
     }
     lightWord(leds, isPast ? W_PAST : W_TO, log);
+    if (!isPast) nextHour = true; // "to" phrasing names the upcoming hour
   }
 
   int hourIndex = (nextHour ? (displayHour + 1) : displayHour) % 12;
