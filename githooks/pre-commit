@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+# Keeps arduino/word_clock/ in sync with src/ and include/ before every
+# commit. Regenerates the derived files and, if the commit touches any of
+# their PlatformIO sources, re-stages the regenerated output so it's
+# included automatically.
+set -euo pipefail
+
+repo_root="$(git rev-parse --show-toplevel)"
+cd "$repo_root"
+
+generated_files=(
+  arduino/word_clock/word_clock.ino
+  arduino/word_clock/words.cpp
+  arduino/word_clock/words.h
+  arduino/word_clock/config.example.h
+)
+
+./scripts/generate_arduino_sketch.sh > /dev/null
+
+changed=false
+for f in "${generated_files[@]}"; do
+  if ! git diff --quiet -- "$f" 2>/dev/null; then
+    git add "$f"
+    changed=true
+  fi
+done
+
+if [ "$changed" = true ]; then
+  echo "pre-commit: regenerated and staged updated arduino/word_clock/ files."
+fi

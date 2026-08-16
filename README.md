@@ -25,6 +25,14 @@ direction each row (see `stripIndex()` in `src/words.cpp`).
    pio device monitor
    ```
 
+Prefer not to install PlatformIO? See `arduino/word_clock/` for an
+Arduino IDE-compatible copy of the same sketch. It's generated from
+`src/`/`include/` by `./scripts/generate_arduino_sketch.sh`; a pre-commit
+hook keeps it in sync automatically once enabled:
+```sh
+git config core.hooksPath githooks
+```
+
 ## Project layout
 
 - `src/main.cpp` — WiFi connect, NTP time sync, main render loop.
