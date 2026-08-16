@@ -31,6 +31,17 @@ enum class ColorMode : uint8_t {
 const char *colorModeName(ColorMode mode);
 ColorMode colorModeFromName(const String &name);
 
+// What plays on the LED grid while waiting on WiFi/NTP at boot, before
+// there's a real time to display.
+enum class BootAnimation : uint8_t {
+  RAINBOW_MOVE = 0, // the whole face lit, a rainbow sweeping across it
+  TWINKLE,          // random words fade in and out like stars in the sky
+  COUNT
+};
+
+const char *bootAnimationName(BootAnimation anim);
+BootAnimation bootAnimationFromName(const String &name);
+
 // All persisted, user-adjustable settings. Add new fields here as more
 // settings are introduced; settingsLoad()/settingsSave() and the web UI
 // (webui.cpp) are the two other places that need to know about a new field.
@@ -42,6 +53,7 @@ struct Settings {
   // Transition speed: 10 = normal, 20 = 2x as fast, 5 = half speed. Kept in
   // tenths (rather than a float) so it stores cleanly in NVS.
   uint8_t animationSpeedTenths = 10;
+  BootAnimation bootAnimation = BootAnimation::RAINBOW_MOVE;
 };
 
 // Loads persisted settings from flash (NVS) into `settings`, falling back to

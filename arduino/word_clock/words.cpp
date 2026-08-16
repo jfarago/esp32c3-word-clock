@@ -65,6 +65,26 @@ static const Word HOUR_WORDS[12] = {
     {6, 9, 6, "ELEVEN"},
 };
 
+// Every word that can ever appear, fixed phrase words followed by the 12
+// hour words. Exposed for effects that light up "some word" without regard
+// to what time it is (e.g. the boot sparkle animation).
+static const Word *const FIXED_WORDS[] = {
+    &W_IT_IS, &W_HALF, &W_TEN_MIN, &W_QUARTER, &W_TWENTY,
+    &W_FIVE_MIN, &W_MINUTES, &W_TO, &W_PAST, &W_OCLOCK,
+};
+static const int FIXED_WORD_COUNT = sizeof(FIXED_WORDS) / sizeof(FIXED_WORDS[0]);
+
+int wordRegionCount() {
+  return FIXED_WORD_COUNT + 12;
+}
+
+void wordRegionAt(int index, int &row, int &colStart, int &length) {
+  const Word *w = index < FIXED_WORD_COUNT ? FIXED_WORDS[index] : &HOUR_WORDS[index - FIXED_WORD_COUNT];
+  row = w->row;
+  colStart = w->colStart;
+  length = w->length;
+}
+
 void renderTimeToWords(CRGB *leds, int hour24, int minute, String &phrase) {
   phrase = "";
   lightWord(leds, W_IT_IS, phrase);

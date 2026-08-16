@@ -20,3 +20,9 @@ uint16_t wordGridStripIndex(int row, int col);
 // `phrase` holds the words that were lit (e.g. "IT IS TEN MINUTES PAST
 // TWELVE"), for logging.
 void renderTimeToWords(CRGB *leds, int hour24, int minute, String &phrase);
+
+// Every word that can ever appear on the face (fixed phrase words plus the
+// 12 hour words), for effects that want to light up "some word" without
+// regard to the current time (e.g. the boot sparkle animation).
+int wordRegionCount();
+void wordRegionAt(int index, int &row, int &colStart, int &length);

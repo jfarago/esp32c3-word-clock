@@ -8,6 +8,7 @@ static const char *KEY_BRIGHTNESS = "brightness";
 static const char *KEY_COLOR_MODE = "colorMode";
 static const char *KEY_COLOR = "color";
 static const char *KEY_SPEED = "speed";
+static const char *KEY_BOOT_ANIMATION = "bootAnim";
 
 const char *animationTypeName(AnimationType type) {
   switch (type) {
@@ -46,6 +47,23 @@ ColorMode colorModeFromName(const String &name) {
   return ColorMode::SOLID;
 }
 
+const char *bootAnimationName(BootAnimation anim) {
+  switch (anim) {
+    case BootAnimation::RAINBOW_MOVE: return "RAINBOW_MOVE";
+    case BootAnimation::TWINKLE: return "TWINKLE";
+    default: return "RAINBOW_MOVE";
+  }
+}
+
+BootAnimation bootAnimationFromName(const String &name) {
+  if (name.equalsIgnoreCase("SPARKLE")) return BootAnimation::TWINKLE; // pre-rename name
+  for (uint8_t i = 0; i < static_cast<uint8_t>(BootAnimation::COUNT); i++) {
+    BootAnimation anim = static_cast<BootAnimation>(i);
+    if (name.equalsIgnoreCase(bootAnimationName(anim))) return anim;
+  }
+  return BootAnimation::RAINBOW_MOVE;
+}
+
 static uint32_t packColor(const CRGB &color) {
   return ((uint32_t)color.r << 16) | ((uint32_t)color.g << 8) | color.b;
 }
@@ -67,6 +85,9 @@ void settingsLoad(Settings &settings) {
 
   settings.animationSpeedTenths = prefs.getUChar(KEY_SPEED, settings.animationSpeedTenths);
 
+  String bootAnimStr = prefs.getString(KEY_BOOT_ANIMATION, bootAnimationName(settings.bootAnimation));
+  settings.bootAnimation = bootAnimationFromName(bootAnimStr);
+
   prefs.end();
 }
 
@@ -78,5 +99,6 @@ void settingsSave(const Settings &settings) {
   prefs.putString(KEY_COLOR_MODE, colorModeName(settings.colorMode));
   prefs.putUInt(KEY_COLOR, packColor(settings.solidColor));
   prefs.putUChar(KEY_SPEED, settings.animationSpeedTenths);
+  prefs.putString(KEY_BOOT_ANIMATION, bootAnimationName(settings.bootAnimation));
   prefs.end();
 }

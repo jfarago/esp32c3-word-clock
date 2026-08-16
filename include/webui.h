@@ -11,9 +11,13 @@
 // on the clock right away instead of waiting for the next time change.
 // `onPreviewColor` is invoked whenever the color mode or solid color
 // changes, so the new coloring shows up on the clock immediately.
+// `onPreviewBootAnimation` is invoked (with the selected style) when the
+// user picks or re-triggers a boot animation, so they can see it without
+// rebooting.
 void webUiBegin(Settings *settings, void (*onChange)(),
                  void (*onPreviewAnimation)(AnimationType type),
-                 void (*onPreviewColor)());
+                 void (*onPreviewColor)(),
+                 void (*onPreviewBootAnimation)(BootAnimation type));
 
 // Services pending HTTP requests. Call this frequently from loop() (and from
 // inside long-running animations) so the UI stays responsive.

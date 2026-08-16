@@ -11,6 +11,7 @@ static Settings *g_settings = nullptr;
 static void (*g_onChange)() = nullptr;
 static void (*g_onPreviewAnimation)(AnimationType) = nullptr;
 static void (*g_onPreviewColor)() = nullptr;
+static void (*g_onPreviewBootAnimation)(BootAnimation) = nullptr;
 
 static const char INDEX_HTML[] PROGMEM = R"HTML(<!DOCTYPE html>
 <html lang="en">
@@ -100,6 +101,15 @@ static const char INDEX_HTML[] PROGMEM = R"HTML(<!DOCTYPE html>
   </label>
   <input type="range" id="brightness" min="1" max="255" step="1">
 
+  <label for="bootAnimation">Boot animation</label>
+  <p class="sub" style="margin-top:0">Plays while connecting to WiFi and
+  syncing the time, before the clock knows what to display.</p>
+  <select id="bootAnimation">
+    <option value="RAINBOW_MOVE">Moving rainbow</option>
+    <option value="TWINKLE">Twinkle</option>
+  </select>
+  <button type="button" id="bootPreviewBtn">&#9654; Preview on clock (3s)</button>
+
   <div id="status"></div>
 
 <script>
@@ -111,6 +121,8 @@ const colorModeEl = document.getElementById('colorMode');
 const solidColorEl = document.getElementById('solidColor');
 const brightnessEl = document.getElementById('brightness');
 const brightnessValueEl = document.getElementById('brightnessValue');
+const bootAnimationEl = document.getElementById('bootAnimation');
+const bootPreviewBtn = document.getElementById('bootPreviewBtn');
 const statusEl = document.getElementById('status');
 
 function showStatus(msg) {
@@ -137,6 +149,7 @@ function loadSettings() {
     updateColorPickerVisibility();
     brightnessEl.value = s.brightness;
     brightnessValueEl.textContent = s.brightness;
+    bootAnimationEl.value = s.bootAnimation;
   });
 }
 
@@ -182,6 +195,12 @@ brightnessEl.addEventListener('change', () => {
   postSettings('brightness=' + encodeURIComponent(brightnessEl.value), 'Saved');
 });
 
+function previewSelectedBootAnimation() {
+  postSettings('bootAnimation=' + encodeURIComponent(bootAnimationEl.value), 'Previewing…');
+}
+bootAnimationEl.addEventListener('change', previewSelectedBootAnimation);
+bootPreviewBtn.addEventListener('click', previewSelectedBootAnimation);
+
 loadSettings();
 </script>
 </body>
@@ -221,6 +240,8 @@ static void handleGetSettings() {
   json += colorModeName(g_settings->colorMode);
   json += "\",\"color\":\"";
   appendHexColor(json, g_settings->solidColor);
+  json += "\",\"bootAnimation\":\"";
+  json += bootAnimationName(g_settings->bootAnimation);
   json += "\"}";
   server.send(200, "application/json", json);
 }
@@ -229,6 +250,7 @@ static void handlePostSettings() {
   bool changed = false;
   bool previewAnimation = false;
   bool previewColor = false;
+  bool previewBootAnimation = false;
 
   if (server.hasArg("animation")) {
     g_settings->animation = animationTypeFromName(server.arg("animation"));
@@ -260,6 +282,11 @@ static void handlePostSettings() {
     changed = true;
     previewColor = true;
   }
+  if (server.hasArg("bootAnimation")) {
+    g_settings->bootAnimation = bootAnimationFromName(server.arg("bootAnimation"));
+    changed = true;
+    previewBootAnimation = true; // re-preview even if the value didn't change
+  }
 
   if (changed) {
     settingsSave(*g_settings);
@@ -274,16 +301,20 @@ static void handlePostSettings() {
     g_onPreviewAnimation(g_settings->animation);
   } else if (previewColor && g_onPreviewColor) {
     g_onPreviewColor();
+  } else if (previewBootAnimation && g_onPreviewBootAnimation) {
+    g_onPreviewBootAnimation(g_settings->bootAnimation);
   }
 }
 
 void webUiBegin(Settings *settings, void (*onChange)(),
                 void (*onPreviewAnimation)(AnimationType type),
-                void (*onPreviewColor)()) {
+                void (*onPreviewColor)(),
+                void (*onPreviewBootAnimation)(BootAnimation type)) {
   g_settings = settings;
   g_onChange = onChange;
   g_onPreviewAnimation = onPreviewAnimation;
   g_onPreviewColor = onPreviewColor;
+  g_onPreviewBootAnimation = onPreviewBootAnimation;
 
   server.on("/", HTTP_GET, handleRoot);
   server.on("/api/settings", HTTP_GET, handleGetSettings);

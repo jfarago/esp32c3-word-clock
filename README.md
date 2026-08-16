@@ -72,10 +72,17 @@ The clock hosts a small settings page from the ESP32 itself — no app or
 cloud service needed. Once it's connected to WiFi, visit
 `http://wordclock.local/` (or the IP address printed over serial) from any
 device on the same network, including your phone, to change the transition
-animation, letter color, and brightness. Animation and color changes preview
-on the clock immediately; everything is saved to flash so it also applies to
-future time changes. More settings can be added over time as `Settings`
-fields in `include/settings.h`, plumbed through `src/webui.cpp`.
+animation, its speed, letter color, brightness, and the boot animation.
+Animation, color, and boot-animation changes preview on the clock
+immediately; everything is saved to flash so it also applies going forward.
+More settings can be added over time as `Settings` fields in
+`include/settings.h`, plumbed through `src/webui.cpp`.
+
+WiFi association and NTP sync together can take several seconds, during
+which there's no real time to show yet. Instead of sitting dark, the clock
+plays a boot animation (a moving rainbow across the whole face, or random
+words twinkling in and out like stars) until it's ready to show the actual
+time.
 
 ## Project layout
 
@@ -85,12 +92,14 @@ that spell it out, using each word's (row, column) position in the text
 grid, translated to the physical serpentine wiring index.
 - `src/animations.cpp` / `include/animations.h` — renders the transition  
 between the currently-displayed and next phrase (crossfade, fade, wipe,  
-ripple, sparkle, pulse, or an instant snap).
+ripple, or an instant snap).
 - `src/settings.cpp` / `include/settings.h` — user-adjustable settings  
 (animation style, color mode/color, brightness), persisted to flash (NVS).
 - `src/colorize.cpp` / `include/colorize.h` — recolors a rendered frame's  
 lit letters per the color mode: solid color, a rainbow across the whole  
 face, or an independent rainbow per word.
+- `src/boot_animation.cpp` / `include/boot_animation.h` — what plays on the  
+face while waiting on WiFi/NTP at boot, before there's a real time to show.
 - `src/webui.cpp` / `include/webui.h` — on-device HTTP server and HTML page  
 for changing settings from a phone or browser.
 - `include/config.h` — WiFi/NTP/LED settings (gitignored, not committed).

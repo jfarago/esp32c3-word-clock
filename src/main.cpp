@@ -4,6 +4,7 @@
 #include <FastLED.h>
 
 #include "animations.h"
+#include "boot_animation.h"
 #include "colorize.h"
 #include "config.h"
 #include "settings.h"
@@ -15,15 +16,29 @@ static CRGB currentFrame[LED_COUNT];
 
 static Settings settings;
 
+// Ticks the boot animation while waiting on `condition()`, instead of
+// blocking silently - WiFi association and NTP sync together can take 5+
+// seconds, so this is what plays on the face until there's a real time to
+// show. `Serial.print(".")`s at roughly the original once-per-500ms cadence.
+template <typename Condition>
+static void waitWithBootAnimation(Condition condition) {
+  unsigned long lastDot = 0;
+  while (!condition()) {
+    bootAnimationTick(leds);
+    unsigned long now = millis();
+    if (now - lastDot >= 500) {
+      Serial.print(".");
+      lastDot = now;
+    }
+  }
+}
+
 static void connectWiFi() {
   WiFi.mode(WIFI_STA);
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
 
   Serial.printf("Connecting to WiFi \"%s\"", WIFI_SSID);
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
-    Serial.print(".");
-  }
+  waitWithBootAnimation([]() { return WiFi.status() == WL_CONNECTED; });
   Serial.printf("\nConnected, IP: %s\n", WiFi.localIP().toString().c_str());
 }
 
@@ -32,10 +47,9 @@ static void syncTime() {
 
   struct tm timeinfo;
   Serial.print("Waiting for NTP time sync");
-  while (!getLocalTime(&timeinfo)) {
-    delay(500);
-    Serial.print(".");
-  }
+  // Short per-call timeout so each poll returns quickly enough to keep the
+  // boot animation smooth, instead of getLocalTime's default 5s block.
+  waitWithBootAnimation([&timeinfo]() { return getLocalTime(&timeinfo, 10); });
   Serial.println();
   Serial.printf("Time synced: %s", asctime(&timeinfo));
 }
@@ -110,6 +124,25 @@ static void previewColor() {
   FastLED.show();
 }
 
+// Requested from the web UI to see what a boot animation looks like without
+// waiting for a reboot. Runs it live on the clock for a few seconds, then
+// restores whatever was actually being displayed.
+static void previewBootAnimation(BootAnimation type) {
+  if (animationBusy) return;
+  animationBusy = true;
+
+  bootAnimationBegin(type);
+  unsigned long start = millis();
+  while (millis() - start < 3000) {
+    bootAnimationTick(leds);
+    webUiHandle();
+  }
+
+  memcpy(leds, currentFrame, sizeof(currentFrame));
+  FastLED.show();
+  animationBusy = false;
+}
+
 void setup() {
   Serial.begin(115200);
   delay(200);
@@ -122,9 +155,13 @@ void setup() {
   FastLED.show();
   memset(currentFrame, 0, sizeof(currentFrame));
 
+  bootAnimationBegin(settings.bootAnimation);
   connectWiFi();
   syncTime();
-  webUiBegin(&settings, applySettings, previewAnimation, previewColor);
+  FastLED.clear();
+  FastLED.show();
+
+  webUiBegin(&settings, applySettings, previewAnimation, previewColor, previewBootAnimation);
 }
 
 static int lastMinuteBlock = -1;
