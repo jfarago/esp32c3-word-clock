@@ -3,6 +3,16 @@
 WS2812-based word clock running on a Seeed XIAO ESP32-C3, built with
 PlatformIO + Arduino framework.
 
+## Face layout
+
+![Word clock face layout](assets/clock-face.svg)
+
+The clock reads "IT IS [minutes] [PAST/TO] [hour] O'CLOCK", e.g. "IT IS TEN
+MINUTES PAST TWELVE" or "IT IS QUARTER TO THREE". This diagram shows word
+placement, not physical wiring order — the LED strip is a single serpentine
+run that starts at the bottom-left row and snakes upward, alternating
+direction each row (see `stripIndex()` in `src/words.cpp`).
+
 ## Setup
 
 1. Install [PlatformIO](https://platformio.org/install) (VS Code extension
@@ -18,9 +28,9 @@ PlatformIO + Arduino framework.
 ## Project layout
 
 - `src/main.cpp` — WiFi connect, NTP time sync, main render loop.
-- `src/words.cpp` / `include/words.h` — maps a time to the set of LED pixel
-  ranges that spell it out. The pixel indices in `words.cpp` are placeholders
-  — update them once the physical LED grid is wired and numbered.
+- `src/words.cpp` / `include/words.h` — maps a time to the set of LED pixels
+  that spell it out, using each word's (row, column) position in the text
+  grid, translated to the physical serpentine wiring index.
 - `include/config.h` — WiFi/NTP/LED settings (gitignored, not committed).
 
 ## Hardware
