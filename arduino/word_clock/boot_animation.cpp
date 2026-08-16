@@ -51,7 +51,7 @@ static void tickRainbowMove(CRGB *leds) {
     }
   }
   FastLED.show();
-  g_hueOffset += 10;
+  g_hueOffset += 5;
 }
 
 // Randomly picks whole words (regardless of what time it is) and twinkles
