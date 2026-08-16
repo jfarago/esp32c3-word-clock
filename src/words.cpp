@@ -29,12 +29,12 @@ static uint16_t stripIndex(int row, int col) {
   return rowStart + withinRow;
 }
 
-static void lightWord(CRGB *leds, const Word &w, String &log) {
+static void lightWord(CRGB *leds, const Word &w, String &phrase) {
   for (uint8_t i = 0; i < w.length; i++) {
     leds[stripIndex(w.row, w.colStart + i)] = WORD_COLOR;
   }
-  if (log.length() > 0) log += ' ';
-  log += w.name;
+  if (phrase.length() > 0) phrase += ' ';
+  phrase += w.name;
 }
 
 static const Word W_IT_IS = {0, 0, 4, "IT IS"};
@@ -65,9 +65,9 @@ static const Word HOUR_WORDS[12] = {
     {6, 9, 6, "ELEVEN"},
 };
 
-void renderTimeToWords(CRGB *leds, int hour24, int minute) {
-  String log;
-  lightWord(leds, W_IT_IS, log);
+void renderTimeToWords(CRGB *leds, int hour24, int minute, String &phrase) {
+  phrase = "";
+  lightWord(leds, W_IT_IS, phrase);
 
   int displayHour = hour24 % 12;
   // The caller renders time slightly ahead of actual, so just floor to the
@@ -77,31 +77,29 @@ void renderTimeToWords(CRGB *leds, int hour24, int minute) {
   bool showNextHour = false;
 
   if (minuteBlock == 0) {
-    lightWord(leds, W_OCLOCK, log);
+    lightWord(leds, W_OCLOCK, phrase);
   } else if (minuteBlock == 30) {
-    lightWord(leds, W_HALF, log);
-    lightWord(leds, W_PAST, log);
+    lightWord(leds, W_HALF, phrase);
+    lightWord(leds, W_PAST, phrase);
   } else {
     bool isPast = minuteBlock < 30;
     int distance = isPast ? minuteBlock : 60 - minuteBlock;
 
     switch (distance) {
-      case 5: lightWord(leds, W_FIVE_MIN, log); lightWord(leds, W_MINUTES, log); break;
-      case 10: lightWord(leds, W_TEN_MIN, log); lightWord(leds, W_MINUTES, log); break;
-      case 15: lightWord(leds, W_QUARTER, log); break;
-      case 20: lightWord(leds, W_TWENTY, log); lightWord(leds, W_MINUTES, log); break;
+      case 5: lightWord(leds, W_FIVE_MIN, phrase); lightWord(leds, W_MINUTES, phrase); break;
+      case 10: lightWord(leds, W_TEN_MIN, phrase); lightWord(leds, W_MINUTES, phrase); break;
+      case 15: lightWord(leds, W_QUARTER, phrase); break;
+      case 20: lightWord(leds, W_TWENTY, phrase); lightWord(leds, W_MINUTES, phrase); break;
       case 25:
-        lightWord(leds, W_TWENTY, log);
-        lightWord(leds, W_FIVE_MIN, log);
-        lightWord(leds, W_MINUTES, log);
+        lightWord(leds, W_TWENTY, phrase);
+        lightWord(leds, W_FIVE_MIN, phrase);
+        lightWord(leds, W_MINUTES, phrase);
         break;
     }
-    lightWord(leds, isPast ? W_PAST : W_TO, log);
+    lightWord(leds, isPast ? W_PAST : W_TO, phrase);
     showNextHour = !isPast; // "to" phrasing names the upcoming hour
   }
 
   int hourIndex = (showNextHour ? (displayHour + 1) : displayHour) % 12;
-  lightWord(leds, HOUR_WORDS[hourIndex], log);
-
-  Serial.printf("%02d:%02d: %s\n", hour24, minute, log.c_str());
+  lightWord(leds, HOUR_WORDS[hourIndex], phrase);
 }

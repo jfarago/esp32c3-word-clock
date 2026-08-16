@@ -62,9 +62,14 @@ void loop() {
   struct tm displayTm;
   localtime_r(&displayTime, &displayTm);
 
+  String phrase;
   FastLED.clear();
-  renderTimeToWords(leds, displayTm.tm_hour, displayTm.tm_min);
+  renderTimeToWords(leds, displayTm.tm_hour, displayTm.tm_min, phrase);
   FastLED.show();
+
+  Serial.printf("actual %02d:%02d:%02d -> clock reads \"%s\" (running %ldm%02lds fast)\n",
+                timeinfo.tm_hour, timeinfo.tm_min, timeinfo.tm_sec, phrase.c_str(),
+                (long)(WORD_LEAD_SECONDS / 60), (long)(WORD_LEAD_SECONDS % 60));
 
   delay(1000);
 }
