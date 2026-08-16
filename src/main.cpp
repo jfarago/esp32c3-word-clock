@@ -46,6 +46,11 @@ void setup() {
   syncTime();
 }
 
+// The clock always rounds display time down to the nearest 5-minute word,
+// so it can lag up to 5 minutes behind the actual time. Rendering as if it
+// were WORD_LEAD_SECONDS ahead caps that lag at WORD_LEAD_SECONDS instead.
+static const time_t WORD_LEAD_SECONDS = 150; // 2 minutes 30 seconds
+
 void loop() {
   struct tm timeinfo;
   if (!getLocalTime(&timeinfo)) {
@@ -53,8 +58,12 @@ void loop() {
     return;
   }
 
+  time_t displayTime = mktime(&timeinfo) + WORD_LEAD_SECONDS;
+  struct tm displayTm;
+  localtime_r(&displayTime, &displayTm);
+
   FastLED.clear();
-  renderTimeToWords(leds, timeinfo.tm_hour, timeinfo.tm_min);
+  renderTimeToWords(leds, displayTm.tm_hour, displayTm.tm_min);
   FastLED.show();
 
   delay(1000);

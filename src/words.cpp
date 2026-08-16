@@ -70,9 +70,11 @@ void renderTimeToWords(CRGB *leds, int hour24, int minute) {
   lightWord(leds, W_IT_IS, log);
 
   int displayHour = hour24 % 12;
-  int roundedMinuteBlock = ((minute + 2) / 5) * 5; // nearest 5-minute word
-  bool nextHour = roundedMinuteBlock == 60;
-  int minuteBlock = nextHour ? 0 : roundedMinuteBlock;
+  // The caller renders time slightly ahead of actual, so just floor to the
+  // nearest 5-minute word; hour rollover at :00 is already reflected in
+  // hour24.
+  int minuteBlock = (minute / 5) * 5;
+  bool showNextHour = false;
 
   if (minuteBlock == 0) {
     lightWord(leds, W_OCLOCK, log);
@@ -95,10 +97,10 @@ void renderTimeToWords(CRGB *leds, int hour24, int minute) {
         break;
     }
     lightWord(leds, isPast ? W_PAST : W_TO, log);
-    if (!isPast) nextHour = true; // "to" phrasing names the upcoming hour
+    showNextHour = !isPast; // "to" phrasing names the upcoming hour
   }
 
-  int hourIndex = (nextHour ? (displayHour + 1) : displayHour) % 12;
+  int hourIndex = (showNextHour ? (displayHour + 1) : displayHour) % 12;
   lightWord(leds, HOUR_WORDS[hourIndex], log);
 
   Serial.printf("%02d:%02d: %s\n", hour24, minute, log.c_str());
